@@ -2,7 +2,7 @@ package com.project.code.Model;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 @Entity
 public class OrderItem {

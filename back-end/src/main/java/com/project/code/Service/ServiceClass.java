@@ -19,8 +19,8 @@ public class ServiceClass {
     // 1. validateInventory
     public boolean validateInventory(Inventory inventory) {
         Inventory existing = inventoryRepository.findByProductIdAndStoreId(
-                inventory.getProductId(),
-                inventory.getStoreId()
+                inventory.getProduct().getId(),
+                inventory.getStore().getId()
         );
         return existing == null;
     }
@@ -40,8 +40,8 @@ public class ServiceClass {
     // 4. getInventoryId
     public Inventory getInventoryId(Inventory inventory) {
         return inventoryRepository.findByProductIdAndStoreId(
-                inventory.getProductId(),
-                inventory.getStoreId()
+                inventory.getProduct().getId(),
+                inventory.getStore().getId()
         );
     }
 }

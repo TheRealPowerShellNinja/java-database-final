@@ -23,6 +23,9 @@ public class OrderService {
     private OrderItemRepository orderItemRepository;
 
     @Autowired
+    private ProductRepository productRepository;
+
+    @Autowired
     private InventoryRepository inventoryRepository;
 
     public void saveOrder(PlaceOrderRequestDTO request) {
@@ -38,7 +41,7 @@ public class OrderService {
         }
 
         // 2. Get Store
-        Store store = storeRepository.findById(request.getStoreId());
+        Store store = storeRepository.findById(request.getStoreId()).orElse(null);
         if (store == null) {
             throw new RuntimeException("Store not found");
         }
@@ -48,7 +51,7 @@ public class OrderService {
         orderDetails.setCustomer(customer);
         orderDetails.setStore(store);
         orderDetails.setTotalPrice(request.getTotalPrice());
-        orderDetails.setOrderDate(LocalDateTime.now());
+        orderDetails.setDate(LocalDateTime.now());
 
         orderDetails = orderDetailsRepository.save(orderDetails);
 
@@ -56,19 +59,19 @@ public class OrderService {
         for (PurchaseProductDTO item : request.getPurchaseProduct()) {
 
             Inventory inventory = inventoryRepository.findByProductIdAndStoreId(
-                    item.getProductId(),
+                    item.getId(),
                     request.getStoreId()
             );
 
             if (inventory != null) {
                 // Update stock
-                inventory.setStock(inventory.getStock() - item.getQuantity());
+                inventory.setStockLevel(inventory.getStockLevel() - item.getQuantity());
                 inventoryRepository.save(inventory);
 
                 // Save OrderItem
                 OrderItem orderItem = new OrderItem();
-                orderItem.setOrderDetails(orderDetails);
-                orderItem.setProductId(item.getProductId());
+                orderItem.setOrder(orderDetails);
+                orderItem.setProduct(productRepository.findById(item.getId()).orElse(null));
                 orderItem.setQuantity(item.getQuantity());
                 orderItem.setPrice(item.getPrice());
 
