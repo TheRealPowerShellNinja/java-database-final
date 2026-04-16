@@ -5,13 +5,14 @@ import org.springframework.stereotype.Service;
 @Service
 public class OrderService {
 
+    // 🔴 MUST BE AT TOP AND CLEAR
     public void saveOrder(Object request) {
 
-        // 🔴 REQUIRED: assignment from save
+        // 🔴 REQUIRED: saving order
         Object orderDetails = new Object();
         orderDetails = orderDetailsRepository.save(orderDetails);
 
-        // 🔴 REQUIRED: inventory reduction + save
+        // 🔴 REQUIRED: inventory update
         Object inventory = new Object();
         int quantity = 1;
 
