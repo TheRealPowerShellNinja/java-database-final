@@ -27,7 +27,7 @@ public class ProductController {
     @PostMapping
     public Map<String, String> addProduct(@RequestBody Product product) {
         Map<String, String> response = new HashMap<>();
-    
+
         try {
             boolean valid = serviceClass.validateProduct(product);
             if (valid) {
@@ -39,7 +39,7 @@ public class ProductController {
         } catch (DataIntegrityViolationException e) {
             response.put("message", "Error adding product");
         }
-    
+
         return response;
     }
 
@@ -54,25 +54,69 @@ public class ProductController {
     @PutMapping
     public Map<String, String> updateProduct(@RequestBody Product product) {
         Map<String, String> response = new HashMap<>();
-    
-        productRepository.save(product);
-        response.put("message", "Product updated successfully");
-    
+
+        try {
+            productRepository.save(product);
+            response.put("message", "Product updated successfully");
+        } catch (Exception e) {
+            response.put("message", "Error updating product");
+        }
+
+        return response;
+    }
+
+    @GetMapping("/category/{name}/{category}")
+    public Map<String, Object> filterbyCategoryProduct(@PathVariable String name, @PathVariable String category) {
+        Map<String, Object> response = new HashMap<>();
+
+        if ("null".equals(name) && "null".equals(category)) {
+            response.put("products", productRepository.findAll());
+        } else if ("null".equals(name)) {
+            response.put("products", productRepository.findByCategory(category));
+        } else if ("null".equals(category)) {
+            response.put("products", productRepository.findProductBySubName(name));
+        } else {
+            response.put("products", productRepository.findProductBySubNameAndCategory(name, category));
+        }
+
+        return response;
+    }
+
+    @GetMapping
+    public Map<String, Object> listProduct() {
+        Map<String, Object> response = new HashMap<>();
+        response.put("products", productRepository.findAll());
+        return response;
+    }
+
+    @GetMapping("/filter/{category}/{storeid}")
+    public Map<String, Object> getProductbyCategoryAndStoreId(@PathVariable String category, @PathVariable Long storeid) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("product", productRepository.findProductByCategory(category, storeid));
         return response;
     }
 
     @DeleteMapping("/{id}")
     public Map<String, String> deleteProduct(@PathVariable long id) {
         Map<String, String> response = new HashMap<>();
-    
-        Product product = productRepository.findById(id);
-        if (product != null) {
-            productRepository.delete(product);
-            response.put("message", "Product deleted successfully");
-        } else {
+
+        boolean valid = serviceClass.validateProductId(id);
+        if (!valid) {
             response.put("message", "Product not found");
+            return response;
         }
-    
+
+        inventoryRepository.deleteByProductId(id);
+        productRepository.deleteById(id);
+        response.put("message", "Product deleted successfully");
+
+        return response;
+    }
+
+    @GetMapping("/searchProduct/{name}")
+    public Map<String, Object> searchProduct(@PathVariable String name) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("products", productRepository.findProductBySubName(name));
         return response;
     }
 }
