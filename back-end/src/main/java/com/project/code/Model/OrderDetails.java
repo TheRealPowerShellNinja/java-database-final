@@ -25,6 +25,7 @@ public class OrderDetails {
 
     private Double totalPrice;
 
+    @Column(name = "orderDate")
     private LocalDateTime date;
 
     @OneToMany(mappedBy = "order", fetch = FetchType.EAGER)
