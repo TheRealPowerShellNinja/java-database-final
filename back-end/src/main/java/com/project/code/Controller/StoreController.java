@@ -5,6 +5,8 @@ import com.project.code.Model.Store;
 import com.project.code.Repo.StoreRepository;
 import com.project.code.Service.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -21,30 +23,33 @@ public class StoreController {
     private OrderService orderService;
 
     @PostMapping
-    public Map<String, String> addStore(@RequestBody Store store) {
+    public ResponseEntity<Map<String, String>> addStore(@RequestBody Store store) {
         Map<String, String> response = new HashMap<>();
-        storeRepository.save(store);
-        response.put("message", "Store added successfully");
-        return response;
+        Store savedStore = storeRepository.save(store);
+        response.put("message", "Store added successfully with id " + savedStore.getId());
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
-    @GetMapping("/validate/{storeId}")
-    public boolean validateStore(@PathVariable long storeId) {
+    @GetMapping("validate/{storeId}")
+    public ResponseEntity<Boolean> validateStore(@PathVariable Long storeId) {
         Store store = storeRepository.findById(storeId);
-        return store != null;
+        if (store != null) {
+            return new ResponseEntity<>(true, HttpStatus.OK);
+        }
+        return new ResponseEntity<>(false, HttpStatus.NOT_FOUND);
     }
 
     @PostMapping("/placeOrder")
-    public Map<String, String> placeOrder(@RequestBody PlaceOrderRequestDTO request) {
+    public ResponseEntity<Map<String, String>> placeOrder(@RequestBody PlaceOrderRequestDTO request) {
         Map<String, String> response = new HashMap<>();
-    
+
         try {
             orderService.saveOrder(request);
             response.put("message", "Order placed successfully");
+            return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (Exception e) {
-            response.put("Error", "Error processing order");
+            response.put("Error", e.getMessage());
+            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
         }
-    
-        return response;
     }
 }
