@@ -2,16 +2,23 @@ package com.project.code.Repo;
 
 import com.project.code.Model.Inventory;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import jakarta.transaction.Transactional;
 import java.util.List;
 
 @Repository
 public interface InventoryRepository extends JpaRepository<Inventory, Long> {
 
-    List<Inventory> findByStoreId(long storeId);
+    @Query("SELECT i FROM Inventory i WHERE i.product.id = :productId AND i.store.id = :storeId")
+    Inventory findByProductIdAndStoreId(Long productId, Long storeId);
 
-    List<Inventory> findByProductId(long productId);
+    List<Inventory> findByStore_Id(Long storeId);
 
-    Inventory findByProductIdAndStoreId(long productId, long storeId);
+    @Modifying
+    @Transactional
+    @Query("DELETE FROM Inventory i WHERE i.product.id = :productId")
+    void deleteByProductId(Long productId);
 }
