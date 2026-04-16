@@ -1,10 +1,18 @@
 package com.project.code.Model;
 
-import com.fasterxml.jackson.annotation.JsonManagedReference;
-
-import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 
 @Entity
 public class OrderDetails {
@@ -24,26 +32,18 @@ public class OrderDetails {
     private Store store;
 
     private Double totalPrice;
-
-    @Column(name = "orderDate")
     private LocalDateTime date;
 
-    @OneToMany(mappedBy = "order", fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "order",fetch = FetchType.EAGER)
     @JsonManagedReference
     private List<OrderItem> orderItems;
 
-    public OrderDetails() {
-    }
-
-    public OrderDetails(Customer customer, Store store, Double totalPrice, LocalDateTime date) {
-        this.customer = customer;
-        this.store = store;
-        this.totalPrice = totalPrice;
-        this.date = date;
-    }
-
     public Long getId() {
         return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public Customer getCustomer() {
@@ -84,5 +84,14 @@ public class OrderDetails {
 
     public void setOrderItems(List<OrderItem> orderItems) {
         this.orderItems = orderItems;
+    }
+
+    public OrderDetails() {}
+
+    public OrderDetails(Customer customer, Store store, Double totalPrice, LocalDateTime date) {
+        this.customer = customer;
+        this.store = store;
+        this.totalPrice = totalPrice;
+        this.date = date;
     }
 }
