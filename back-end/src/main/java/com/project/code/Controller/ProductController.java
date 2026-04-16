@@ -30,6 +30,33 @@ public class ProductController {
     @Autowired
     private InventoryRepository inventoryRepository;
 
+    // 🔴 KEY: GET /product/{id}
+    @GetMapping("/product/{id}")
+    public Map<String, Object> getProductbyId(@PathVariable Long id) {
+        Map<String, Object> map = new HashMap<>();
+        Product result = productRepository.findByid(id);
+        map.put("products", result);
+        return map;
+    }
+
+    // 🔴 KEY: DELETE /product/{id}
+    @DeleteMapping("/{id}")
+    public Map<String, String> deleteProduct(@PathVariable Long id) {
+        Map<String, String> map = new HashMap<>();
+
+        if (!serviceClass.ValidateProductId(id)) {
+            map.put("message", "Id " + id + " not present in database");
+            return map;
+        }
+
+        inventoryRepository.deleteByProductId(id);
+        orderItemRepository.deleteByProductId(id);
+        productRepository.deleteById(id);
+
+        map.put("message", "Deleted product successfully with id: " + id);
+        return map;
+    }
+
     @PostMapping
     public Map<String, String> addProduct(@RequestBody Product product) {
 
@@ -44,19 +71,6 @@ public class ProductController {
         } catch (DataIntegrityViolationException e) {
             map.put("message", "SKU should be unique");
         }
-        return map;
-    }
-
-    @GetMapping("/product/{id}")
-    public Map<String, Object> getProductbyId(@PathVariable Long id) {
-        System.out.println("result: ");
-        System.out.println("result: ");
-        System.out.println("result: ");
-        Map<String, Object> map = new HashMap<>();
-        Product result = productRepository.findByid(id);
-
-        System.out.println("result: " + result);
-        map.put("products", result);
         return map;
     }
 
@@ -84,16 +98,14 @@ public class ProductController {
         } else if (category.equals("null")) {
             map.put("products", productRepository.findProductBySubName(name));
             return map;
-
         }
+
         map.put("products", productRepository.findProductBySubNameAndCategory(name, category));
         return map;
-
     }
 
     @GetMapping
     public Map<String, Object> listProduct() {
-
         Map<String, Object> map = new HashMap<>();
         map.put("products", productRepository.findAll());
         return map;
@@ -104,24 +116,7 @@ public class ProductController {
                                                              @PathVariable long storeid) {
         Map<String, Object> map = new HashMap<>();
         List result = productRepository.findProductByCategory(category, storeid);
-
         map.put("product", result);
-        return map;
-    }
-
-    @DeleteMapping("/{id}")
-    public Map<String, String> deleteProduct(@PathVariable Long id) {
-        Map<String, String> map = new HashMap<>();
-
-        if (!serviceClass.ValidateProductId(id)) {
-            map.put("message", "Id " + id + " not present in database");
-            return map;
-        }
-        inventoryRepository.deleteByProductId(id);
-        orderItemRepository.deleteByProductId(id);
-        productRepository.deleteById(id);
-
-        map.put("message", "Deleted product successfully with id: " + id);
         return map;
     }
 
