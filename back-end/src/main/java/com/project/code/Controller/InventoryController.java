@@ -37,16 +37,18 @@ public class InventoryController {
             }
 
             request.getInventory().setProduct(request.getProduct());
+
             Inventory inventory = serviceClass.getInventoryId(request.getInventory());
 
             if (inventory != null) {
-                request.getInventory().setId(inventory.getId());
+                inventory.setStockLevel(request.getInventory().getStockLevel());
                 productRepository.save(request.getProduct());
-                inventoryRepository.save(request.getInventory());
+                inventoryRepository.save(inventory);
                 response.put("message", "Successfully updated product");
             } else {
                 response.put("message", "No data available");
             }
+
         } catch (DataIntegrityViolationException e) {
             response.put("message", "Error updating product");
         } catch (Exception e) {
