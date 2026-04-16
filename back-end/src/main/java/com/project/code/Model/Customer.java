@@ -1,9 +1,14 @@
 package com.project.code.Model;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
-
-import jakarta.persistence.*;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.validation.constraints.NotNull;
+
 import java.util.List;
 
 @Entity
@@ -20,7 +25,7 @@ public class Customer {
     private String email;
 
     @NotNull(message = "Phone cannot be null")
-    private String mobileNo;
+    private String phone;
 
     @OneToMany(mappedBy = "customer", fetch = FetchType.EAGER)
     @JsonManagedReference
@@ -29,10 +34,10 @@ public class Customer {
     public Customer() {
     }
 
-    public Customer(String name, String email, String mobileNo) {
+    public Customer(String name, String email, String phone) {
         this.name = name;
         this.email = email;
-        this.mobileNo = mobileNo;
+        this.phone = phone;
     }
 
     public Long getId() {
@@ -55,12 +60,12 @@ public class Customer {
         this.email = email;
     }
 
-    public String getMobileNo() {
-        return mobileNo;
+    public String getPhone() {
+        return phone;
     }
 
-    public void setMobileNo(String mobileNo) {
-        this.mobileNo = mobileNo;
+    public void setPhone(String phone) {
+        this.phone = phone;
     }
 
     public List<OrderDetails> getOrders() {
