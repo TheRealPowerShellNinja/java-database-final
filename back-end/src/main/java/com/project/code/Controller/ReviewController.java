@@ -28,26 +28,28 @@ public class ReviewController {
     @GetMapping("/{storeId}/{productId}")
     public Map<String, Object> getReviews(@PathVariable Long storeId, @PathVariable Long productId) {
         Map<String, Object> response = new HashMap<>();
+        List<Map<String, Object>> reviewResponse = new ArrayList<>();
 
-        List<Review> reviewList = reviewRepository.findByStoreIdAndProductId(storeId, productId);
-        List<Map<String, Object>> reviews = new ArrayList<>();
+        List<Review> allReviews = reviewRepository.findAll();
 
-        for (Review review : reviewList) {
-            Map<String, Object> reviewData = new HashMap<>();
-            reviewData.put("comment", review.getComment());
-            reviewData.put("rating", review.getRating());
+        for (Review review : allReviews) {
+            if (review.getStoreId().equals(storeId) && review.getProductId().equals(productId)) {
+                Map<String, Object> reviewMap = new HashMap<>();
+                reviewMap.put("comment", review.getComment());
+                reviewMap.put("rating", review.getRating());
 
-            Customer customer = customerRepository.findById(review.getCustomerId());
-            if (customer != null) {
-                reviewData.put("customerName", customer.getName());
-            } else {
-                reviewData.put("customerName", "Unknown");
+                Customer customer = customerRepository.findById(review.getCustomerId());
+                if (customer != null) {
+                    reviewMap.put("customerName", customer.getName());
+                } else {
+                    reviewMap.put("customerName", "Unknown");
+                }
+
+                reviewResponse.add(reviewMap);
             }
-
-            reviews.add(reviewData);
         }
 
-        response.put("reviews", reviews);
+        response.put("reviews", reviewResponse);
         return response;
     }
 }
