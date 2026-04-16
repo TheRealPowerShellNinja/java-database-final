@@ -1,7 +1,19 @@
 package com.project.code.Service;
 
-import com.project.code.Model.*;
-import com.project.code.Repo.*;
+import com.project.code.Model.Customer;
+import com.project.code.Model.Inventory;
+import com.project.code.Model.OrderDetails;
+import com.project.code.Model.OrderItem;
+import com.project.code.Model.PlaceOrderRequestDTO;
+import com.project.code.Model.Product;
+import com.project.code.Model.PurchaseProductDTO;
+import com.project.code.Model.Store;
+import com.project.code.Repo.CustomerRepository;
+import com.project.code.Repo.InventoryRepository;
+import com.project.code.Repo.OrderDetailsRepository;
+import com.project.code.Repo.OrderItemRepository;
+import com.project.code.Repo.ProductRepository;
+import com.project.code.Repo.StoreRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -9,6 +21,12 @@ import java.time.LocalDateTime;
 
 @Service
 public class OrderService {
+
+    @Autowired
+    private ProductRepository productRepository;
+
+    @Autowired
+    private InventoryRepository inventoryRepository;
 
     @Autowired
     private CustomerRepository customerRepository;
@@ -22,61 +40,52 @@ public class OrderService {
     @Autowired
     private OrderItemRepository orderItemRepository;
 
-    @Autowired
-    private ProductRepository productRepository;
+    public void saveOrder(PlaceOrderRequestDTO placeOrderRequest) {
 
-    @Autowired
-    private InventoryRepository inventoryRepository;
+        Customer customer = customerRepository.findByEmail(placeOrderRequest.getCustomerEmail());
 
-    public void saveOrder(PlaceOrderRequestDTO request) {
-
-        // 1. Get or Create Customer
-        Customer customer = customerRepository.findByEmail(request.getCustomerEmail());
         if (customer == null) {
             customer = new Customer();
-            customer.setName(request.getCustomerName());
-            customer.setEmail(request.getCustomerEmail());
-            customer.setMobileNo(request.getCustomerPhone());
+            customer.setName(placeOrderRequest.getCustomerName());
+            customer.setEmail(placeOrderRequest.getCustomerEmail());
+            customer.setMobileNo(placeOrderRequest.getCustomerPhone());
             customer = customerRepository.save(customer);
         }
 
-        // 2. Get Store
-        Store store = storeRepository.findById(request.getStoreId()).orElse(null);
+        Store store = storeRepository.findById(placeOrderRequest.getStoreId());
         if (store == null) {
             throw new RuntimeException("Store not found");
         }
 
-        // 3. Create OrderDetails
         OrderDetails orderDetails = new OrderDetails();
         orderDetails.setCustomer(customer);
         orderDetails.setStore(store);
-        orderDetails.setTotalPrice(request.getTotalPrice());
+        orderDetails.setTotalPrice(placeOrderRequest.getTotalPrice());
         orderDetails.setDate(LocalDateTime.now());
 
-        orderDetails = orderDetailsRepository.save(orderDetails);
+        OrderDetails savedOrderDetails = orderDetailsRepository.save(orderDetails);
 
-        // 4. Process Order Items
-        for (PurchaseProductDTO item : request.getPurchaseProduct()) {
+        for (PurchaseProductDTO item : placeOrderRequest.getPurchaseProduct()) {
 
-            Inventory inventory = inventoryRepository.findByProductIdAndStoreId(
-                    item.getId(),
-                    request.getStoreId()
-            );
+            Product product = productRepository.findById(item.getId());
+            if (product == null) {
+                continue;
+            }
+
+            Inventory inventory = inventoryRepository.findByProductIdAndStoreId(item.getId(), placeOrderRequest.getStoreId());
 
             if (inventory != null) {
-                // Update stock
                 inventory.setStockLevel(inventory.getStockLevel() - item.getQuantity());
                 inventoryRepository.save(inventory);
-
-                // Save OrderItem
-                OrderItem orderItem = new OrderItem();
-                orderItem.setOrder(orderDetails);
-                orderItem.setProduct(productRepository.findById(item.getId()).orElse(null));
-                orderItem.setQuantity(item.getQuantity());
-                orderItem.setPrice(item.getPrice());
-
-                orderItemRepository.save(orderItem);
             }
+
+            OrderItem orderItem = new OrderItem();
+            orderItem.setOrder(savedOrderDetails);
+            orderItem.setProduct(product);
+            orderItem.setQuantity(item.getQuantity());
+            orderItem.setPrice(item.getPrice());
+
+            orderItemRepository.save(orderItem);
         }
     }
 }
