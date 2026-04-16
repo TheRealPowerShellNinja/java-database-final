@@ -1,24 +1,28 @@
 package com.project.code.Controller;
 
-import com.project.code.Model.Product;
-import com.project.code.Repo.InventoryRepository;
-import com.project.code.Repo.ProductRepository;
-import com.project.code.Service.ServiceClass;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
-@RestController
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.web.bind.annotation.*;
+
+import com.project.code.Model.Product;
+import com.project.code.Repo.InventoryRepository;
+import com.project.code.Repo.OrderItemRepository;
+import com.project.code.Repo.ProductRepository;
+import com.project.code.Service.ServiceClass;
+
 @RequestMapping("/product")
+@RestController
 public class ProductController {
 
     @Autowired
     private ProductRepository productRepository;
+
+    @Autowired
+    private OrderItemRepository orderItemRepository;
 
     @Autowired
     private ServiceClass serviceClass;
@@ -27,107 +31,104 @@ public class ProductController {
     private InventoryRepository inventoryRepository;
 
     @PostMapping
-    public ResponseEntity<Map<String, String>> addProduct(@RequestBody Product product) {
-        Map<String, String> response = new HashMap<>();
+    public Map<String, String> addProduct(@RequestBody Product product) {
 
-        try {
-            boolean valid = serviceClass.validateProduct(product);
-            if (valid) {
-                productRepository.save(product);
-                response.put("message", "Product added successfully");
-                return new ResponseEntity<>(response, HttpStatus.CREATED);
-            } else {
-                response.put("message", "Product already exists");
-                return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
-            }
-        } catch (DataIntegrityViolationException e) {
-            response.put("message", "Error adding product");
-            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+        Map<String, String> map = new HashMap<>();
+        if (!serviceClass.validateProduct(product)) {
+            map.put("message", "Product already present in database");
+            return map;
         }
+        try {
+            productRepository.save(product);
+            map.put("message", "Product added successfully");
+        } catch (DataIntegrityViolationException e) {
+            map.put("message", "SKU should be unique");
+        }
+        return map;
     }
 
     @GetMapping("/product/{id}")
-    public ResponseEntity<Map<String, Object>> getProductbyId(@PathVariable Long id) {
-        Map<String, Object> response = new HashMap<>();
+    public Map<String, Object> getProductbyId(@PathVariable Long id) {
+        System.out.println("result: ");
+        System.out.println("result: ");
+        System.out.println("result: ");
+        Map<String, Object> map = new HashMap<>();
+        Product result = productRepository.findByid(id);
 
-        Product product = productRepository.findById(id);
-        if (product != null) {
-            response.put("products", product);
-            return new ResponseEntity<>(response, HttpStatus.OK);
-        } else {
-            response.put("message", "No data available");
-            return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
-        }
+        System.out.println("result: " + result);
+        map.put("products", result);
+        return map;
     }
 
     @PutMapping
-    public ResponseEntity<Map<String, String>> updateProduct(@RequestBody Product product) {
-        Map<String, String> response = new HashMap<>();
-
+    public Map<String, String> updateProduct(@RequestBody Product product) {
+        Map<String, String> map = new HashMap<>();
         try {
             productRepository.save(product);
-            response.put("message", "Product updated successfully");
-            return new ResponseEntity<>(response, HttpStatus.OK);
-        } catch (Exception e) {
-            response.put("message", "Error updating product");
-            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+            map.put("message", "Data upated sucessfully");
+        } catch (Error e) {
+            map.put("message", "Error occured");
         }
+
+        return map;
     }
 
     @GetMapping("/category/{name}/{category}")
-    public ResponseEntity<Map<String, Object>> filterbyCategoryProduct(@PathVariable String name,
-                                                                       @PathVariable String category) {
-        Map<String, Object> response = new HashMap<>();
+    public Map<String, Object> filterbyCategoryProduct(@PathVariable String name,
+                                                       @PathVariable String category) {
+        Map<String, Object> map = new HashMap<>();
 
-        if ("null".equals(name) && "null".equals(category)) {
-            response.put("products", productRepository.findAll());
-        } else if ("null".equals(name)) {
-            response.put("products", productRepository.findByCategory(category));
-        } else if ("null".equals(category)) {
-            response.put("products", productRepository.findProductBySubName(name));
-        } else {
-            response.put("products", productRepository.findProductBySubNameAndCategory(name, category));
+        if (name.equals("null")) {
+            map.put("products", productRepository.findByCategory(category));
+            return map;
+        } else if (category.equals("null")) {
+            map.put("products", productRepository.findProductBySubName(name));
+            return map;
+
         }
+        map.put("products", productRepository.findProductBySubNameAndCategory(name, category));
+        return map;
 
-        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     @GetMapping
-    public ResponseEntity<Map<String, Object>> listProduct() {
-        Map<String, Object> response = new HashMap<>();
-        response.put("products", productRepository.findAll());
-        return new ResponseEntity<>(response, HttpStatus.OK);
+    public Map<String, Object> listProduct() {
+
+        Map<String, Object> map = new HashMap<>();
+        map.put("products", productRepository.findAll());
+        return map;
     }
 
-    @GetMapping("/filter/{category}/{storeid}")
-    public ResponseEntity<Map<String, Object>> getProductbyCategoryAndStoreId(@PathVariable String category,
-                                                                              @PathVariable Long storeid) {
-        Map<String, Object> response = new HashMap<>();
-        response.put("product", productRepository.findProductByCategory(category, storeid));
-        return new ResponseEntity<>(response, HttpStatus.OK);
+    @GetMapping("filter/{category}/{storeid}")
+    public Map<String, Object> getProductbyCategoryAndStoreId(@PathVariable String category,
+                                                             @PathVariable long storeid) {
+        Map<String, Object> map = new HashMap<>();
+        List result = productRepository.findProductByCategory(category, storeid);
+
+        map.put("product", result);
+        return map;
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Map<String, String>> deleteProduct(@PathVariable Long id) {
-        Map<String, String> response = new HashMap<>();
+    public Map<String, String> deleteProduct(@PathVariable Long id) {
+        Map<String, String> map = new HashMap<>();
 
-        boolean valid = serviceClass.validateProductId(id);
-        if (!valid) {
-            response.put("message", "Product not found");
-            return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+        if (!serviceClass.ValidateProductId(id)) {
+            map.put("message", "Id " + id + " not present in database");
+            return map;
         }
-
         inventoryRepository.deleteByProductId(id);
+        orderItemRepository.deleteByProductId(id);
         productRepository.deleteById(id);
-        response.put("message", "Product deleted successfully");
 
-        return new ResponseEntity<>(response, HttpStatus.OK);
+        map.put("message", "Deleted product successfully with id: " + id);
+        return map;
     }
 
     @GetMapping("/searchProduct/{name}")
-    public ResponseEntity<Map<String, Object>> searchProduct(@PathVariable String name) {
-        Map<String, Object> response = new HashMap<>();
-        response.put("products", productRepository.findProductBySubName(name));
-        return new ResponseEntity<>(response, HttpStatus.OK);
+    public Map<String, Object> searchProduct(@PathVariable String name) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("products", productRepository.findProductBySubName(name));
+        return map;
     }
 }
