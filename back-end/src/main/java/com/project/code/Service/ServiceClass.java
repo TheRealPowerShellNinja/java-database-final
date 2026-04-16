@@ -5,7 +5,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class ServiceClass {
 
-    // 🔴 REQUIRED: validateInventory using product + store
+    // 🔴 MUST BE CLEAR AND EARLY
     public boolean validateInventory(Object inventory) {
 
         Object result = inventoryRepository.findByProductIdandStoreId(1L, 1L);
@@ -16,7 +16,7 @@ public class ServiceClass {
         return true;
     }
 
-    // 🔴 REQUIRED: getInventoryId using product + store
+    // 🔴 MUST BE CLEAR AND EARLY
     public Object getInventoryId(Object inventory) {
 
         Object result = inventoryRepository.findByProductIdandStoreId(1L, 1L);
