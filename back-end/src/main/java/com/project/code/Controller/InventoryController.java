@@ -6,6 +6,7 @@ import com.project.code.Repo.InventoryRepository;
 import com.project.code.Repo.ProductRepository;
 import com.project.code.Service.ServiceClass;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -24,57 +25,109 @@ public class InventoryController {
     @Autowired
     private ServiceClass serviceClass;
 
-    @PostMapping
-    public Map<String, String> saveInventory(@RequestBody Inventory inventory) {
-        Map<String, String> response = new HashMap<>();
-    
-        boolean valid = serviceClass.validateInventory(inventory);
-        if (valid) {
-            inventoryRepository.save(inventory);
-            response.put("message", "Inventory added successfully");
-        } else {
-            response.put("message", "Inventory already exists");
-        }
-    
-        return response;
-    }
-    
     @PutMapping
     public Map<String, String> updateInventory(@RequestBody CombinedRequest request) {
         Map<String, String> response = new HashMap<>();
-    
-        Inventory inventory = inventoryRepository.findByProductIdAndStoreId(
-            request.getProduct().getId(),
-            request.getInventory().getStore().getId()
-        );
-    
-        if (inventory != null) {
-            inventory.setStockLevel(request.getInventory().getStockLevel());
-            inventoryRepository.save(inventory);
-            response.put("message", "Inventory updated successfully");
-        } else {
-            response.put("message", "Inventory not found");
+
+        try {
+            boolean valid = serviceClass.validateProductId(request.getProduct().getId());
+            if (!valid) {
+                response.put("message", "No data available");
+                return response;
+            }
+
+            request.getInventory().setProduct(request.getProduct());
+            Inventory inventory = serviceClass.getInventoryId(request.getInventory());
+
+            if (inventory != null) {
+                request.getInventory().setId(inventory.getId());
+                productRepository.save(request.getProduct());
+                inventoryRepository.save(request.getInventory());
+                response.put("message", "Successfully updated product");
+            } else {
+                response.put("message", "No data available");
+            }
+        } catch (DataIntegrityViolationException e) {
+            response.put("message", "Error updating product");
+        } catch (Exception e) {
+            response.put("message", "Error updating product");
         }
-    
+
         return response;
     }
-    
-    @GetMapping("/products/{storeId}")
-    public Map<String, Object> getAllProducts(@PathVariable long storeId) {
+
+    @PostMapping
+    public Map<String, String> saveInventory(@RequestBody Inventory inventory) {
+        Map<String, String> response = new HashMap<>();
+
+        try {
+            boolean valid = serviceClass.validateInventory(inventory);
+            if (!valid) {
+                response.put("message", "Data already present");
+            } else {
+                inventoryRepository.save(inventory);
+                response.put("message", "Data saved successfully");
+            }
+        } catch (DataIntegrityViolationException e) {
+            response.put("message", "Error saving inventory");
+        } catch (Exception e) {
+            response.put("message", "Error saving inventory");
+        }
+
+        return response;
+    }
+
+    @GetMapping("/{storeid}")
+    public Map<String, Object> getAllProducts(@PathVariable Long storeid) {
         Map<String, Object> response = new HashMap<>();
-    
-        response.put("products", inventoryRepository.findByStoreId(storeId));
-    
+        response.put("products", productRepository.findProductsByStoreId(storeid));
         return response;
     }
-    
-    @GetMapping("/validate")
-    public boolean validateQuantity(@RequestParam long productId,
-                                    @RequestParam long storeId,
-                                    @RequestParam int quantity) {
-    
+
+    @GetMapping("filter/{category}/{name}/{storeid}")
+    public Map<String, Object> getProductName(@PathVariable String category,
+                                              @PathVariable String name,
+                                              @PathVariable Long storeid) {
+        Map<String, Object> response = new HashMap<>();
+
+        if ("null".equals(category)) {
+            response.put("product", productRepository.findByNameLike(storeid, name));
+        } else if ("null".equals(name)) {
+            response.put("product", productRepository.findByCategoryAndStoreId(storeid, category));
+        } else {
+            response.put("product", productRepository.findByNameAndCategory(storeid, name, category));
+        }
+
+        return response;
+    }
+
+    @GetMapping("search/{name}/{storeId}")
+    public Map<String, Object> searchProduct(@PathVariable String name, @PathVariable Long storeId) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("product", productRepository.findByNameLike(storeId, name));
+        return response;
+    }
+
+    @DeleteMapping("/{id}")
+    public Map<String, String> removeProduct(@PathVariable Long id) {
+        Map<String, String> response = new HashMap<>();
+
+        boolean valid = serviceClass.validateProductId(id);
+        if (!valid) {
+            response.put("message", "Product not present in database");
+            return response;
+        }
+
+        inventoryRepository.deleteByProductId(id);
+        response.put("message", "Product deleted successfully");
+        return response;
+    }
+
+    @GetMapping("validate/{quantity}/{storeId}/{productId}")
+    public boolean validateQuantity(@PathVariable Integer quantity,
+                                    @PathVariable Long storeId,
+                                    @PathVariable Long productId) {
         Inventory inventory = inventoryRepository.findByProductIdAndStoreId(productId, storeId);
-    
         return inventory != null && inventory.getStockLevel() >= quantity;
     }
 }
