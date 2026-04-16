@@ -11,33 +11,44 @@ import org.springframework.stereotype.Service;
 public class ServiceClass {
 
     @Autowired
-    private InventoryRepository inventoryRepository;
-
-    @Autowired
     private ProductRepository productRepository;
 
-    // 1. validateInventory
+    @Autowired
+    private InventoryRepository inventoryRepository;
+
     public boolean validateInventory(Inventory inventory) {
-        Inventory existing = inventoryRepository.findByProductIdAndStoreId(
+        Inventory existingInventory = inventoryRepository.findByProductIdAndStoreId(
                 inventory.getProduct().getId(),
                 inventory.getStore().getId()
         );
-        return existing == null;
+
+        if (existingInventory != null) {
+            return false;
+        }
+
+        return true;
     }
 
-    // 2. validateProduct
     public boolean validateProduct(Product product) {
-        Product existing = productRepository.findByName(product.getName());
-        return existing == null;
+        Product existingProduct = productRepository.findByName(product.getName());
+
+        if (existingProduct != null) {
+            return false;
+        }
+
+        return true;
     }
 
-    // 3. validateProductId
     public boolean validateProductId(long id) {
-        Product existing = productRepository.findById(id);
-        return existing != null;
+        Product product = productRepository.findById(id);
+
+        if (product == null) {
+            return false;
+        }
+
+        return true;
     }
 
-    // 4. getInventoryId
     public Inventory getInventoryId(Inventory inventory) {
         return inventoryRepository.findByProductIdAndStoreId(
                 inventory.getProduct().getId(),
